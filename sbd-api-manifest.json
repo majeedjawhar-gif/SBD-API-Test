@@ -1,0 +1,8 @@
+{
+  "url": "https://majeedjawhar-gif.github.io/sbd-scantrack/sbd-api.html",
+  "title": "SBD API",
+  "icon": "https://majeedjawhar-gif.github.io/sbd-scantrack/sbd-api-icon.svg",
+  "infoUrl": "https://majeedjawhar-gif.github.io/sbd-scantrack/sbd-api-README.md",
+  "description": "Test console for the Trimble Connect Workspace and REST APIs",
+  "extensionType": ["project"]
+}

@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>SBD API</title>
+<style>
+:root{--bg:#f4f2ea;--ink:#26332d;--mu:#6b756f;--ln:#d9d6c8;--br:#2f4a3f;--ok:#4f7a5a;--bd:#a5513f}
+*{box-sizing:border-box}body{margin:0;font:14px "Segoe UI",system-ui,Arial;background:var(--bg);color:var(--ink)}
+header{background:var(--br);color:#f1eedd;padding:10px 16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}h1{margin:0;font-size:18px}
+.pill{padding:3px 10px;border-radius:12px;font-size:12px;background:#ecdcae;color:#26332d}.pill.ok{background:#cfe0d1}.pill.bad{background:#e6c2b9}
+#err{display:none;background:#e6c2b9;padding:8px 16px;font-size:13px}
+nav{display:flex;flex-wrap:wrap;gap:2px;padding:6px 16px 0;background:#ebe8da;border-bottom:1px solid var(--ln)}nav button{border:0;background:none;padding:8px 12px;cursor:pointer;color:var(--mu);border-bottom:3px solid transparent;font:inherit}nav .on{color:var(--br);border-color:var(--br);font-weight:600}
+main{padding:16px;max-width:1150px;margin:auto}section{display:none}section.on{display:block}
+.c{background:#fff;border:1px solid var(--ln);border-radius:6px;padding:12px;margin-bottom:14px}h2{font-size:15px;margin:0 0 8px;color:var(--br)}
+.row{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px}
+.api{border:1px solid var(--ln);border-radius:6px;padding:10px;background:#faf9f4}.api code{display:block;font-size:11px;color:var(--mu);margin:4px 0 8px;word-break:break-all}
+.btn{background:var(--br);color:#fff;border:0;padding:7px 12px;border-radius:4px;cursor:pointer;font:inherit}.btn.s{background:#e3dfcc;color:var(--ink)}
+label{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--mu)}input,select,textarea{padding:7px;border:1px solid var(--ln);border-radius:4px;font:inherit;background:#fff;color:var(--ink);width:100%}
+pre{background:#26332d;color:#f1eedd;padding:10px;border-radius:4px;max-height:300px;overflow:auto;font-size:12px;white-space:pre-wrap;word-break:break-all;margin:8px 0 0}
+.g{display:grid;grid-template-columns:110px 1fr;gap:10px;margin-bottom:10px}.w{overflow-x:auto}table{border-collapse:collapse;width:100%;font-size:13px}th,td{padding:6px 8px;border-bottom:1px solid var(--ln);text-align:left;vertical-align:top}th{background:#ebe8da;color:var(--br)}
+.m{font-size:12px;color:var(--mu);margin:6px 0}.ok{color:var(--ok);font-weight:600}.bad{color:var(--bd);font-weight:600}
+</style></head><body>
+<header><div><h1>SBD API</h1><small>Trimble Connect API test console</small></div><span id="pill" class="pill">Starting…</span></header>
+<div id="err"></div>
+<nav id="tabs"></nav>
+<main>
+<section id="v-ws"><div class="c"><h2>Connection checklist</h2><div id="stp"></div></div>
+<div class="c"><h2>Workspace API</h2><p class="m">Each card runs one live call and shows the response. Available when this page is opened from the Trimble Connect left menu.</p><div class="row" id="wsCards"></div><label style="margin-top:10px">Status message<input id="msg" value="SBD API connected"></label><pre id="wsOut">Responses appear here.</pre></div>
+<div class="c"><h2>Events from Trimble Connect</h2><pre id="evOut">No events yet. Select an item in the Trimble Connect left menu.</pre></div></section>
+<section id="v-rest"><div class="c"><h2>REST API</h2><p class="m">Requests use the signed-in user's access token. Recommended order: Request access token, Regions, Project details. GET requests run on selection; other methods ask for confirmation.</p><div class="row" id="presets"></div></div>
+<div class="c"><h2>Request builder</h2><div class="g"><label>Method<select id="meth"><option>GET</option><option>POST</option><option>PUT</option><option>DELETE</option></select></label><label>Base URL<select id="base"></select></label></div>
+<label>Path or full URL ({projectId} and {rootId} are substituted automatically)<input id="path"></label><label style="margin-top:8px">Body (JSON, for POST/PUT)<textarea id="body" rows="3"></textarea></label>
+<label style="margin-top:8px">Access token<input id="tok" type="password" autocomplete="off"></label>
+<p><button class="btn" id="send">Send</button> <button class="btn s" id="getTok">Request access token</button></p><div class="m" id="stat"></div><pre id="code"></pre><pre id="resp">Response appears here.</pre></div></section>
+<section id="v-sum"><div class="c"><h2>Test summary</h2><p class="m">Runs every read-only (GET) request in order and reports the result. Nothing is changed in your project.</p><p><button class="btn" id="runAll">Run all tests</button></p><div id="sumMsg" class="m"></div><div class="w"><table id="sumTbl"></table></div></div></section>
+<section id="v-learn"><div class="c"><h2>API reference</h2><div class="w"><table><tr><th>API</th><th>Use</th><th>Where to test</th></tr>
+<tr><td>Workspace API</td><td>Extensions and embedded Connect components</td><td>Workspace API tab</td></tr>
+<tr><td>Core</td><td>Projects, users, folders, files, todos, views</td><td>REST API / Test summary</td></tr>
+<tr><td>Regions</td><td>Finds the right server for a project</td><td>REST API / Test summary</td></tr>
+<tr><td>Core Account</td><td>Groups and account-level data</td><td>Reference link (REST API tab)</td></tr>
+<tr><td>Model / Model Feature</td><td>Query BIM model data; read Organizer groups</td><td>Reference link (REST API tab)</td></tr>
+<tr><td>Organizer</td><td>Hierarchical groups of items</td><td>Reference link (REST API tab)</td></tr>
+<tr><td>Property Set</td><td>Custom property libraries on objects</td><td>Reference link (REST API tab)</td></tr>
+<tr><td>Topics</td><td>BCF issues with comments and viewpoints</td><td>Reference link (REST API tab)</td></tr>
+<tr><td>Trimble Identity</td><td>Sign-in and access tokens</td><td>Either tab</td></tr></table></div>
+<p class="m">Model, Organizer, Property Set and Topics each have their own paths. Use the reference links in the REST API tab and enter the path in the request builder with the regional base URL returned by Regions.</p></div></section>
+</main>
+<script src="https://components.connect.trimble.com/trimble-connect-workspace-api/index.js"></script>
+<script>
+const $=i=>document.getElementById(i),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const emb=window.parent!==window,MASTER='https://app.connect.trimble.com/tc/api/2.0';let API=null,PROJ=null,REG=null,ROOT=null;
+const VIEWS=[['ws','Workspace API'],['rest','REST API'],['sum','Test summary'],['learn','Reference']];
+$('tabs').innerHTML=VIEWS.map(([k,n])=>`<button data-v="${k}">${n}</button>`).join('');
+const show=v=>{VIEWS.forEach(([k])=>$('v-'+k).classList.toggle('on',k===v));document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.v===v))};
+$('tabs').onclick=e=>e.target.dataset.v&&show(e.target.dataset.v);
+const pill=(t,c)=>{$('pill').textContent=t;$('pill').className='pill '+(c||'')};
+const pretty=x=>typeof x==='string'?x:JSON.stringify(x===undefined?'(done, no return value)':x,null,2);
+const showErr=t=>{$('err').style.display='block';$('err').textContent=t};
+addEventListener('error',e=>showErr('Script error: '+e.message));addEventListener('unhandledrejection',e=>showErr('Error: '+(e.reason&&e.reason.message||e.reason)));
+/* checklist */
+const SL=['Workspace API script','Opened inside Trimble Connect','Connected to Trimble Connect','Project read','Access token'],ST={};
+const stHtml=()=>SL.map(n=>{const s=ST[n];return'<div>'+(s?(s.ok?'<span class="ok">&#10004;</span>':'<span class="bad">&#10008;</span>'):'&#9675;')+' '+n+(s&&s.msg?' - '+esc(s.msg):'')+'</div>'}).join('');
+const step=(n,ok,msg)=>{ST[n]={ok,msg:msg||''};$('stp').innerHTML=stHtml();if(ok===false)showErr(n+': '+(msg||'failed'))};
+$('stp').innerHTML=stHtml();
+/* token */
+function gotTok(t){if(t&&t!=='pending'&&t!=='denied'){$('tok').value=t;step('Access token',true,'received');if(!REG)req('GET',MASTER+'/regions');return'Token received ('+t.length+' characters, hidden)'}
+ if(t==='denied'){step('Access token',false,'denied by the user');return'Denied'}return'Waiting for consent - approve the message in Trimble Connect'}
+const reqTok=async()=>gotTok(await API.extension.requestPermission('accesstoken'));
+/* Workspace API cards */
+const IC=new URL('icon.svg',location.href).href.replace('icon.svg','sbd-api-icon.svg');
+const WS=[
+['Get current project','API.project.getCurrentProject()',()=>API.project.getCurrentProject(),'Which Trimble Connect project is open'],
+['Get user settings','API.user.getUserSettings()',()=>API.user.getUserSettings(),'The user\'s language'],
+['Request access token','API.extension.requestPermission("accesstoken")',reqTok,'Asks the user to consent; token stays hidden'],
+['Set status message','API.extension.setStatusMessage(text)',()=>API.extension.setStatusMessage($('msg').value),'Shows a message in Connect'],
+['Set left menu','API.ui.setMenu({...})',()=>setMenu(),'Adds this tool\'s menu; select it to see events'],
+['Highlight menu item','API.ui.setActiveMenuItem("sbdapi_rest")',()=>API.ui.setActiveMenuItem('sbdapi_rest'),'Selects a submenu in Connect']];
+const setMenu=()=>API.ui.setMenu({title:'SBD API',icon:IC,command:'sbdapi_main',subMenus:VIEWS.map(([k,n])=>({title:n,icon:IC,command:'sbdapi_'+k}))});
+$('wsCards').innerHTML=WS.map((w,i)=>`<div class="api"><b>${w[0]}</b><code>${w[1]}</code><div class="m">${w[3]}</div><button class="btn" data-i="${i}">Run</button></div>`).join('');
+$('wsCards').onclick=async e=>{const i=e.target.dataset.i;if(i===undefined)return;if(!API){$('wsOut').textContent='Not connected. Open this page from the Trimble Connect left menu.';return}
+ try{$('wsOut').textContent=pretty(await WS[i][2]())}catch(x){$('wsOut').textContent='Error: '+(x&&x.message||x)}};
+function onEvent(ev,a){const d=a&&a.data!==undefined?a.data:a,t=new Date().toLocaleTimeString();
+ if(ev==='extension.accessToken'){$('evOut').textContent=t+' extension.accessToken '+gotTok(d)+'\n'+$('evOut').textContent;return}
+ $('evOut').textContent=t+' '+ev+' '+pretty(d)+'\n'+$('evOut').textContent;
+ if(ev==='extension.command'){const m=String(d).split('?')[0].replace('sbdapi_','');if(VIEWS.some(v=>v[0]===m))show(m)}}
+/* REST */
+const P=[['Regions','GET',MASTER+'/regions','','Lists regional servers; the origin field gives the base URL'],
+['My projects','GET','/projects','','Projects the user can access'],
+['Project details','GET','/projects/{projectId}','','Name, location and rootId'],
+['Project users','GET','/projects/{projectId}/users','','Members of the project'],
+['Folder items','GET','/folders/{rootId}/items','','Files and folders at the top level'],
+['ToDos','GET','/todos?projectId={projectId}','','Tasks in the project'],
+['Views','GET','/views?projectId={projectId}','','Saved 3D views'],
+['Create folder','POST','/folders','{"name":"SBD API Test","parentId":"{rootId}"}','Write request: creates a folder in the project'],
+['Docs: Core / Account','LINK','https://developer.trimble.com/docs/connect/core','','Reference'],['Docs: Model','LINK','https://developer.trimble.com/docs/connect/','','Reference'],
+['Docs: Organizer','LINK','https://developer.trimble.com/docs/connect/organizer','','Reference'],['Docs: Property Set','LINK','https://pset-api.connect.trimble.com/v1','','Reference'],['Docs: Topics','LINK','https://developer.trimble.com/docs/connect/topics-api','','Reference']];
+$('presets').innerHTML=P.map((p,i)=>`<div class="api"><b>${p[0]}</b><code>${p[1]==='LINK'?'opens reference page':p[1]+' '+p[2].replace(MASTER,'')}</code><div class="m">${p[4]}</div><button class="btn${p[1]==='GET'?'':' s'}" data-i="${i}">${p[1]==='GET'?'Run':p[1]==='LINK'?'Open':'Fill'}</button></div>`).join('');
+$('presets').onclick=e=>{const i=e.target.dataset.i;if(i===undefined)return;const p=P[i];if(p[1]==='LINK'){window.open(p[2],'_blank');return}$('meth').value=p[1];$('path').value=p[2];$('body').value=p[3];if(p[1]==='GET')send()};
+function bases(){const s=[MASTER,'https://app21.connect.trimble.com/tc/api/2.0','https://app31.connect.trimble.com/tc/api/2.0'],loc=String(PROJ&&PROJ.location||'').toLowerCase();let pick=null;const add=u=>{if(!s.includes(u))s.push(u)};
+ (Array.isArray(REG)?REG:[]).forEach(r=>{if(!r||!r.origin)return;const o=String(r.origin).replace(/\/$/,''),b=o+(o.includes('/tc/api')?'':'/tc/api/2.0');add(b);
+  if(loc&&String(r.location||'').toLowerCase()===loc){pick=b;Object.values(r).forEach(v=>{if(typeof v==='string'&&/^https:\/\//.test(v))add(v.replace(/\/$/,''))})}});
+ const cur=pick||$('base').value||s[0];$('base').innerHTML=s.map(u=>`<option${u===cur?' selected':''}>${esc(u)}</option>`).join('')}
+bases();
+async function req(m,path,body){const fill=x=>x.replace(/{projectId}/g,PROJ&&PROJ.id||'').replace(/{rootId}/g,ROOT||(PROJ&&PROJ.rootId)||'');const p=fill(path.trim());
+ if(p.includes('/folders//'))return{err:'rootId unknown - run Project details first'};
+ const url=/^https?:\/\//.test(p)?p:$('base').value+p,t=$('tok').value.trim(),h={};if(t)h.Authorization='Bearer '+t;if(m!=='GET'&&body)h['Content-Type']='application/json';
+ const o={method:m,headers:h};if(m!=='GET'&&body)o.body=fill(body);const t0=performance.now();
+ try{const r=await fetch(url,o),txt=await r.text();let j=null;try{j=JSON.parse(txt)}catch(x){}
+  if(url.endsWith('/regions')&&j){REG=j;bases()}if(j&&j.rootId)ROOT=j.rootId;
+  return{url,o,status:r.status,text:r.statusText,ms:Math.round(performance.now()-t0),txt,j}}
+ catch(x){return{url,o,err:x.message,ms:Math.round(performance.now()-t0)}}}
+async function send(){const m=$('meth').value;if(m!=='GET'&&!confirm(m+' changes data in your Trimble Connect project. Continue?'))return;$('stat').textContent='Sending…';
+ const r=await req(m,$('path').value,$('body').value);if(r.url)$('code').textContent='fetch("'+r.url+'", {method:"'+m+'", headers:{Authorization:"Bearer <token>"}'+(r.o.body?', body:'+JSON.stringify(r.o.body):'')+'})';
+ if(r.err&&!r.url){$('stat').textContent=r.err;return}
+ if(r.err){$('stat').textContent='Request failed: '+r.err;$('resp').textContent='"Failed to fetch" usually means the browser blocked the call (CORS), the region is wrong, or you are offline. Select another Base URL and try again.';return}
+ $('stat').textContent=r.status+' '+r.text+' - '+r.ms+' ms'+($('tok').value?'':' (no token)');$('resp').textContent=r.j?pretty(r.j).slice(0,8000):r.txt.slice(0,4000)}
+$('send').onclick=send;
+$('getTok').onclick=async()=>{if(!API){$('stat').textContent='Open from Trimble Connect to request a token, or paste one above.';return}try{$('stat').textContent=await reqTok()}catch(x){$('stat').textContent=String(x&&x.message||x)}};
+/* test summary */
+$('runAll').onclick=async()=>{const rows=P.filter(p=>p[1]==='GET'),tb=$('sumTbl');$('sumMsg').textContent=$('tok').value?'Running…':'No access token yet - request one first (requests will likely return 401).';
+ tb.innerHTML='<tr><th>Test</th><th>Request</th><th>Result</th><th>Time</th></tr>';let ok=0;
+ for(const p of rows){const r=await req('GET',p[2],''),good=r.status>=200&&r.status<300;if(good)ok++;
+  tb.innerHTML+=`<tr><td>${p[0]}</td><td>${esc(r.url?r.url.replace(/^https:\/\/[^/]+/,''):'')}</td><td class="${good?'ok':'bad'}">${r.err?esc(r.err):r.status+' '+esc(r.text)}</td><td>${r.ms??''} ms</td></tr>`}
+ $('sumMsg').textContent=ok+' of '+rows.length+' tests passed.'};
+/* start */
+show('ws');(async()=>{const ok=typeof TrimbleConnectWorkspace!=='undefined';step('Workspace API script',ok,ok?'':'did not load (blocked or offline)');
+ step('Opened inside Trimble Connect',emb,emb?'':'page was opened directly - open it from the Trimble Connect left menu');
+ if(!emb||!ok){pill(emb?'Workspace API not loaded':'Standalone - Workspace API unavailable','bad');return}
+ try{API=await TrimbleConnectWorkspace.connect(window.parent,onEvent,30000);step('Connected to Trimble Connect',true);pill('Connected','ok');
+  PROJ=await API.project.getCurrentProject();ROOT=PROJ.rootId||null;step('Project read',true,PROJ.name);bases();pill('Connected - '+(PROJ.name||'project'),'ok');
+  await setMenu();API.extension.setStatusMessage('SBD API ready')}
+ catch(e){pill('Connection failed','bad');step(API?'Project read':'Connected to Trimble Connect',false,String(e&&e.message||e))}})();
+</script></body></html>
